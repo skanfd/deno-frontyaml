@@ -1,8 +1,8 @@
-import * as fm from "./mod.ts";
+import { parse, stringify } from "./mod.ts";
 
 const md: string = await Deno.readTextFile("example.md");
-const parsed = fm.parse(md);
-const stringified = fm.stringify(parsed);
+const parsed = parse(md);
+const stringified = stringify(parsed);
 
 console.log("=====================");
 console.log("Source");
@@ -11,7 +11,7 @@ console.log(md, "\n\n");
 console.log("=====================");
 console.log("Parsed");
 console.log("=====================");
-console.log(parsed, "\n\n");
+console.log(JSON.stringify(parsed, undefined, 2), "\n\n");
 console.log("=====================");
 console.log("Stringified");
 console.log("=====================");

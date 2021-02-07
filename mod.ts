@@ -1,26 +1,41 @@
-import { yaml } from "./deps.ts";
+import { yaml, YAMLError } from "./deps.ts";
+export { YAMLError };
 
 interface Markdown {
   attributes: Record<string, unknown>;
   body: string;
-  //   bodyBegin: number;
-  // frontmatter: string;
 }
 
+/**
+ * Return body offset, zero if front matter not exists.
+ */
+export function find(md: string): number {
+  const re = /^\-{3}\s*?\n(.|\n)*?\n\-{3}\s*?\n?/g;
+  re.exec(md);
+  return re.lastIndex;
+}
+
+/**
+ * Throw YAMLError if front matter invaliated.
+ */
 export function parse(md: string): Markdown {
-  const [drop, frontmatter, ...body] = md.split(/(?<=^|\n)\-{3}\s*?\n/g);
-  return {
-    attributes: (yaml.parse(frontmatter) || {}) as Record<string, unknown>,
-    body: body.join("---\n") || "",
-    // frontmatter: frontmatter || "",
-  };
+  let attributes = {};
+  const pos = find(md);
+  if (pos) {
+    const front: string =
+      (/(?<=^\-{3}\s*?\n)(.|\n)*?\n(?=\-{3}\s*?\n?)/.exec(md) as string[])[0];
+    const parsed = yaml.parse(front) as Record<string, unknown>;
+    attributes = parsed || {};
+  }
+  return { attributes, body: md.slice(pos).trim() };
 }
 
-export function stringify(md: Markdown) {
-  const lines: string[] = [];
-  lines.push("---\n");
-  lines.push(yaml.stringify(md.attributes));
-  lines.push("---\n");
-  lines.push(md.body);
-  return lines.join("");
+export function stringify({ attributes, body }: Markdown) {
+  const empty: boolean = Object.keys(attributes).length === 0;
+  const front: string = empty
+    ? ""
+    : `---\n${yaml.stringify(attributes)}---\n\n`;
+  return `${front}${body}`;
 }
+
+export default { find, parse, stringify, YAMLError };
